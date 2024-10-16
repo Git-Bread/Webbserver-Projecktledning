@@ -1,4 +1,4 @@
-//-------------------------------------------------- IMPORTS AND SETUP ---------------------------------------------//
+//-------------------------------------------------- IMPORTS AND SETUP --------------------------------------------------//
 import validate from "./validator.js";
 
 //express imports to facilitate the webbapp
@@ -14,7 +14,7 @@ import cors from "cors";
 app.use(cors());
 
 //prefered port or 27017
-const port = process.env.port as string | "27017";
+const port = process.env.port | 27017;
 
 //database connection
 const url = process.env.DB_HOST + ":" + port + "/ProjectLedningsProjekt";
@@ -23,7 +23,7 @@ const url = process.env.DB_HOST + ":" + port + "/ProjectLedningsProjekt";
 let apiPort = 3000;
 app.listen(apiPort, () => {console.log("listening")});
 
-//-------------------------------------------------- MONGODB ------------------------------------------------------//
+//-------------------------------------------------- MONGODB ---------------------------------------------------------------//
 
 //mongoose for schema and stuff
 import { connect, Schema, model } from "mongoose";
@@ -34,14 +34,15 @@ connect(url)
 //schemas
 const loginSchema = new Schema({
     email: String,
-    username: String
+    username: String,
+    loginDate: Date,
     //img: bson
 });
 
 //models
 const login = model("login", loginSchema);
 
-//-------------------------------------------------- Functionality -------------------------------------------------//
+//-------------------------------------------------- Login Functionality -------------------------------------------------//
 
 //user registration
 app.post("/register", async (req, res) => {
@@ -59,7 +60,7 @@ app.post("/register", async (req, res) => {
 
     let newUser = new login({
         email: req.body.email,
-        username: req.body.username
+        username: req.body.username,
         //img: default
     });  
     
@@ -67,7 +68,7 @@ app.post("/register", async (req, res) => {
     res.status(200).send({message: "Account registered"});
 })
 
-//User login functionaliy, Axed Content
+//User login functionaliy
 app.post("/login", async (req, res) => {
     //validate for input errors
     try {

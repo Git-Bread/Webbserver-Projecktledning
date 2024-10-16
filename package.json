@@ -2,10 +2,11 @@
   "name": "webbserver",
   "version": "1.0.0",
   "description": "webbserver applikation till projekt",
-  "main": "server.ts",
+  "type": "module",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev":"nodemon server.js"
   },
   "author": "Max Gagner (maga2101)",
   "license": "ISC",
@@ -19,6 +20,7 @@
     "@types/cors": "^2.8.17",
     "@types/dotenv": "^8.2.0",
     "@types/express": "^5.0.0",
-    "@types/node": "^22.7.5"
+    "@types/node": "^22.7.5",
+    "nodemon": "^3.1.7"
   }
 }
