@@ -2,8 +2,9 @@
 import validate from "./validator.js";
 
 //express imports to facilitate the webbapp
-import express from "express";
+import express, { json } from "express";
 const app = express();
+app.use(json());
 
 //mongo db and dotenv stuff
 import dotenv from "dotenv";
@@ -49,7 +50,7 @@ app.post("/register", async (req, res) => {
     //Error handling
     try {
         let val = await validate(req, 2, login);
-        if(!val) {
+        if(val != "") {
             res.status(400).send({error: val});
             return;
         } 
@@ -70,15 +71,17 @@ app.post("/register", async (req, res) => {
 
 //User login functionaliy
 app.post("/login", async (req, res) => {
+    console.log(req.body)
     //validate for input errors
     try {
-        let val = await validate(req, 2, login);
-        if (!val) {
+        let val = await validate(req, 1, login);
+        if (val != "") {
             res.status(400).send({error: val});
             return
         }
     } catch (error) {
         res.status(400).send({error: error});
+        return;
     }
 
     res.status(200).send({message: "Confirmed Login"});

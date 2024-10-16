@@ -2,20 +2,22 @@
 export default async function validate(obj, mode, login) {
     //holds all errors for comprehensive output
     let errors = [];
-    //checks for standard empty
-    if (!obj.body.username) {
-        errors.push("No username")
-    }
-    if (!obj.body.password) {
-        errors.push("No password")
-    }
-
     let logins = await login.find();
 
     //diffrent validation modes for login/register, more efficient with an if but this is more expandable
     switch (mode) {
         case 1: //highly unsafe and dosent bother to check email, but it works according to the specifications
             //checks if user exists
+            try { //empty
+                if (obj.body.username == "") {
+                    errors.push("no username")
+                    return errors;
+                }
+            }
+            catch(error) { //bad request
+                errors.push("no username")
+                return errors;
+            }
             let match = false;
             for (let index = 0; index < logins.length; index++) {
                 if (obj.body.username == logins[index].username) {
@@ -24,11 +26,9 @@ export default async function validate(obj, mode, login) {
             }
             if (!match) {
                 errors.push("invalid username")
+                return errors;
             }
-            if (errors[0] != "") {
-                return errors;   
-            }
-        
+            break;
         //registration
         case 2:
             //compares usernames to check for duplicate
@@ -37,7 +37,6 @@ export default async function validate(obj, mode, login) {
                     errors.push("Invalid username, that username is already in use")
                 }  
             }
-
             //compares emails to check for duplicate
             for (let index = 0; index < logins.length; index++) {
                 if (obj.body.email == logins[index].email) {
@@ -49,7 +48,8 @@ export default async function validate(obj, mode, login) {
                 errors.push("No username")
             }
             if (!obj.body.email) {
-                errors.push("No number")
+                errors.push("No email")
+                return errors;   
             }
             //regex for email format, makes sure it is two parts and an @ aswell as an 2-4 ending such as .com
             let regex = /^[a-zA-Z0–9._-]+@[a-zA-Z0–9.-]+\.[a-zA-Z]{2,4}$/;
@@ -65,5 +65,5 @@ export default async function validate(obj, mode, login) {
         default:
             break;
     }
-    return true
+    return false
 }
