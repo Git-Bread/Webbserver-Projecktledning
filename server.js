@@ -37,15 +37,13 @@ const loginSchema = new Schema({
     email: String,
     username: String,
     img: Buffer,
-    owned: [{type: Schema.ObjectId, ref: "login"}],
-    member: [{type: Schema.ObjectId, ref: "login"}]
+    member: [String]
 });
 const login = model("login", loginSchema);
 
 const groupSchema = new Schema({
     name: String,
-    owner: {type: Schema.ObjectId, ref: "login"},
-    members: [{type: Schema.ObjectId, ref: "login"}],
+    members: [String],
     messages: [{message: String, time: Date, user: String}],
     files: [{file: Buffer, time: Date, user: String}]
 });
@@ -138,23 +136,54 @@ app.delete("/removeUser", async (req, res) => {
 
 //-------------------------------------------------- Group Functionality -------------------------------------------------//
 
-app.post("/createGroup", async (req, res) => {
+app.post("/groupCreate", async (req, res) => {
     //Error handling
     try {
         if(!await loginCheck(req.body.username)) { 
+            res.status(400).send({message: "Invalid User"});
+            return;
+        }
         let user = await login.findOne({username: req.body.username});
-        if(group.findOne({name: req.body.name})) {
+        if(await group.findOne({name: req.body.groupname})) {
             res.status(400).send({error: "group name already in use"});
+            return;
         }
         let newGroup = new group({
-            name: req.body.name,
-            owner: user
+            name: req.body.groupname,
+            members: user.username
         });
-        
+        user.member.push(newGroup);
+        user.save();
         newGroup.save();
-        res.status(200).send({message: "Account registered"});
-    }
+        res.status(200).send({message: "Group Created!"});
+        return
     } catch (error) {
+        res.status(400).send({error: error});
+        return;
+    }
+})
+
+app.post("/groupMessage", async (req, res) => {
+    //Error handling
+    try {
+        if(!await loginCheck(req.body.username)) {
+            res.status(401).send({error: "invalid user"});
+            return;
+        }
+        let user = await login.findOne({username: req.body.username});
+        let group = await group.find({member: user, name: req.body.name});
+        if(!group) {
+            res.status(401).send({error: "you are not a member of the group or it dosent exist"});
+        };
+        let message = {
+            message: req.body.message, 
+            time: new Date, 
+            user: req.body.user
+        }
+        group.messages.push(message);
+        res.status(200).send({error: "sent message"});
+    }
+    catch (error) {
         res.status(400).send({error: error});
         return;
     }
