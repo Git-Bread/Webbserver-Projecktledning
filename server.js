@@ -137,7 +137,6 @@ app.delete("/removeUser", async (req, res) => {
 //-------------------------------------------------- Group Functionality -------------------------------------------------//
 
 app.post("/groupCreate", async (req, res) => {
-    //Error handling
     try {
         if(!await loginCheck(req.body.username)) { 
             res.status(400).send({message: "Invalid User"});
@@ -152,7 +151,7 @@ app.post("/groupCreate", async (req, res) => {
             name: req.body.groupname,
             members: user.username
         });
-        user.member.push(newGroup);
+        user.member.push(newGroup.name);
         user.save();
         newGroup.save();
         res.status(200).send({message: "Group Created!"});
@@ -163,15 +162,77 @@ app.post("/groupCreate", async (req, res) => {
     }
 })
 
-app.post("/groupMessage", async (req, res) => {
-    //Error handling
+app.delete("/groupDelete", async (req, res) => {
     try {
         if(!await loginCheck(req.body.username)) {
             res.status(401).send({error: "invalid user"});
             return;
         }
-        console.log(req.body.groupname);
-        let messageGroup = await group.findOne({name: req.body.groupname, members: [req.body.username]});
+        if(!await group.findOne({name: req.body.groupname})) {
+            res.status(400).send({error: "invalid group"});
+            return;
+        }
+        let deleteGroup = await group.findOne({name: req.body.groupname, members: req.body.username});
+        let user = await login.findOne({username: req.body.username});
+        user.member.pull(deleteGroup.name);
+        user.save();
+        if(deleteGroup.members.length > 1) {
+            deleteGroup.members.pull(user.username);
+            deleteGroup.save();
+        }
+        else {
+            await group.findOneAndDelete({name: deleteGroup.name});
+        }
+        res.status(200).send({message: "left/removed group"});
+    } catch (error) {
+        res.status(400).send({error: error});
+        return;
+    }
+})
+
+app.put("/groupJoin", async (req, res) => {
+    try {
+        if(!await loginCheck(req.body.username)) {
+            res.status(401).send({error: "invalid user"});
+            return;
+        }
+        if(!await group.findOne({name: req.body.groupname})) {
+            res.status(400).send({error: "invalid group"});
+            return;
+        }
+        if(await group.findOne({name: req.body.groupname, members: req.body.username})) {
+            res.status(400).send({error: "Already part of group"});
+            return;
+        }
+        
+        let user = await login.findOne({username: req.body.username})
+        let groupJoin = await group.findOne({name: req.body.groupname});
+
+        user.member.push(groupJoin.name);
+        user.save();
+        groupJoin.members.push(user.username);
+        groupJoin.save();
+        res.status(200).send({message: "joined group"});
+    }
+
+    catch (error) {
+        res.status(400).send({error: error});
+        return;
+    }
+})
+
+app.post("/groupMessage", async (req, res) => {
+    try {
+        if(!await loginCheck(req.body.username)) {
+            res.status(401).send({error: "invalid user"});
+            return;
+        }
+        if(!await group.findOne({name: req.body.groupname})) {
+            res.status(400).send({error: "invalid group"});
+            return;
+        }
+
+        let messageGroup = await group.findOne({name: req.body.groupname, members: req.body.username});
         if(!messageGroup) {
             res.status(401).send({error: "you are not a member of the group or it dosent exist"});
             return;
@@ -181,7 +242,7 @@ app.post("/groupMessage", async (req, res) => {
             time: new Date, 
             user: req.body.username
         }
-        console.log(message);
+
         messageGroup.messages.push(message);
         messageGroup.save();
         res.status(200).send({message: "sent message in group"});
