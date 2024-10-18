@@ -61,7 +61,7 @@ app.post("/register", async (req, res) => {
     let newUser = new login({
         email: req.body.email,
         username: req.body.username,
-        img: "default"
+        img: null
     });  
     
     newUser.save();
@@ -77,8 +77,8 @@ app.post("/login", async (req, res) => {
             res.status(400).send({error: val});
             return
         }
-        let user = login.findOne({username: req.body.username});
-        res.status(200).send({message: "Confirmed Login", content: user});
+        let user = await login.findOne({username: req.body.username});
+        res.status(200).send({message: "Confirmed Login", userdata: user});
     } catch (error) {
         res.status(400).send({error: error});
         return;
