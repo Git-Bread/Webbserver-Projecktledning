@@ -36,14 +36,13 @@ connect(url)
 const loginSchema = new Schema({
     email: String,
     username: String,
-    loginDate: Date,
-    //img: bson
+    img: Buffer
 });
 
 //models
 const login = model("login", loginSchema);
 
-//-------------------------------------------------- Login Functionality -------------------------------------------------//
+//-------------------------------------------------- Profile Functionality -------------------------------------------------//
 
 //user registration
 app.post("/register", async (req, res) => {
@@ -62,7 +61,7 @@ app.post("/register", async (req, res) => {
     let newUser = new login({
         email: req.body.email,
         username: req.body.username,
-        //img: default
+        img: "default"
     });  
     
     newUser.save();
@@ -71,7 +70,6 @@ app.post("/register", async (req, res) => {
 
 //User login functionaliy
 app.post("/login", async (req, res) => {
-    console.log(req.body)
     //validate for input errors
     try {
         let val = await validate(req, 1, login);
@@ -79,10 +77,25 @@ app.post("/login", async (req, res) => {
             res.status(400).send({error: val});
             return
         }
+        let user = login.findOne({username: req.body.username});
+        res.status(200).send({message: "Confirmed Login", content: user});
     } catch (error) {
         res.status(400).send({error: error});
         return;
     }
+})
 
-    res.status(200).send({message: "Confirmed Login"});
+//change profile picture
+app.post("/uploadPicture", async (req, res) => {
+    try {
+        if(!login.findOne({username: req.body.username})) {
+            res.status(400).send({error: "Invalid username, something went wrong"});
+            return;
+        }
+        await login.findOneAndUpdate({username: req.body.username}, {img: req.body.img});
+    } catch (error) {
+        res.status(400).send({error: error});
+        return;
+    }
+    res.status(200).send({message: "Updated User Picture"});
 })
