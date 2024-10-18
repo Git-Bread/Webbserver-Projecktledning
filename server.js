@@ -36,11 +36,14 @@ connect(url)
 const loginSchema = new Schema({
     email: String,
     username: String,
-    img: Buffer
+    img: Buffer,
+    owned: [{type: Schema.ObjectId, ref: "login"}],
+    member: [{type: Schema.ObjectId, ref: "login"}]
 });
 const login = model("login", loginSchema);
 
 const groupSchema = new Schema({
+    name: String,
     owner: {type: Schema.ObjectId, ref: "login"},
     members: [{type: Schema.ObjectId, ref: "login"}],
     messages: [{message: String, time: Date, user: String}],
@@ -67,8 +70,7 @@ app.post("/register", async (req, res) => {
 
     let newUser = new login({
         email: req.body.email,
-        username: req.body.username,
-        img: null
+        username: req.body.username
     });  
     
     newUser.save();
@@ -93,7 +95,7 @@ app.post("/login", async (req, res) => {
             res.status(200).send({message: "Confirmed Login", userdata: user});
             return
         };
-        res.status(400).send({error: "Invalid username"});
+        res.status(401).send({error: "Invalid username"});
         return
     } catch (error) {
         res.status(400).send({error: error});
@@ -108,7 +110,7 @@ app.put("/uploadPicture", async (req, res) => {
             await login.findOneAndUpdate({username: req.body.username}, {img: req.body.img});
         }
         else {
-            res.status(400).send({error: "something went wrong, no username found"});
+            res.status(404).send({error: "something went wrong, no username found"});
         }
     } catch (error) {
         res.status(400).send({error: error});
@@ -126,7 +128,7 @@ app.delete("/removeUser", async (req, res) => {
             res.status(200).send({message: "Removed User", user: val});
         }
         else {
-            res.status(400).send({error: "something went wrong, no username found"});
+            res.status(401).send({error: "invalid username"});
         }
     } catch (error) {
         res.status(400).send({error: error});
@@ -139,12 +141,19 @@ app.delete("/removeUser", async (req, res) => {
 app.post("/createGroup", async (req, res) => {
     //Error handling
     try {
-        if(await loginCheck(req.body.username)) {
-            let val = await login.findOneAndDelete({username: req.body.username});
-            res.status(200).send({message: "Removed User", user: val});
-        }
+        if(!await loginCheck(req.body.username)) { 
         let user = await login.findOne({username: req.body.username});
-        res.status(200).send({message: "Confirmed Login", userdata: user});
+        if(group.findOne({name: req.body.name})) {
+            res.status(400).send({error: "group name already in use"});
+        }
+        let newGroup = new group({
+            name: req.body.name,
+            owner: user
+        });
+        
+        newGroup.save();
+        res.status(200).send({message: "Account registered"});
+    }
     } catch (error) {
         res.status(400).send({error: error});
         return;
