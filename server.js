@@ -284,3 +284,21 @@ app.put("/groupUploadFile", async (req, res) => {
     }
     res.status(200).send({message: "Uploaded file"});
 })
+
+app.get("/groupFetch", async (req, res) => {
+    if(!await loginCheck(req.body.username)) {
+        res.status(401).send({error: "invalid user"});
+        return;
+    }
+    if(!await group.findOne({name: req.body.groupname})) {
+        res.status(400).send({error: "invalid group"});
+        return;
+    }
+
+    let groupFile = await group.findOne({name: req.body.groupname, members: req.body.username});
+    if(!groupFile) {
+        res.status(401).send({error: "you are not a member of the group or it dosent exist"});
+        return;
+    };
+    res.status(200).send({groupFile});
+})
