@@ -55,7 +55,7 @@ const group = model("groups", groupSchema);
 app.post("/register", async (req, res) => {
     //Error handling
     try {
-        let val = await registrationValidate(req, login);
+        let val = await validate(req, login);
         if(val != "") {
             res.status(400).send({error: val});
             return;
@@ -76,7 +76,7 @@ app.post("/register", async (req, res) => {
 })
 
 async function loginCheck(username) {
-    if(await login.findOne({username: req.body.username})) {
+    if(await login.findOne({username: username})) {
         return true;
     }
     else {
@@ -88,7 +88,7 @@ async function loginCheck(username) {
 app.post("/login", async (req, res) => {
     //validate for input errors
     try {
-        if(loginCheck(req.body.username)) {
+        if(await loginCheck(req.body.username)) {
             let user = await login.findOne({username: req.body.username});
             res.status(200).send({message: "Confirmed Login", userdata: user});
             return
@@ -104,7 +104,7 @@ app.post("/login", async (req, res) => {
 //change profile picture
 app.put("/uploadPicture", async (req, res) => {
     try {
-        if(loginCheck(req.body.username)) {
+        if(await loginCheck(req.body.username)) {
             await login.findOneAndUpdate({username: req.body.username}, {img: req.body.img});
         }
         else {
@@ -121,16 +121,17 @@ app.put("/uploadPicture", async (req, res) => {
 //Remove user, wont be used on the website but exists for admin purposes
 app.delete("/removeUser", async (req, res) => {
     try {
-        if(!login.findOne({username: req.body.username})) {
-            res.status(400).send({error: "Invalid username"});
-            return;
+        if(await loginCheck(req.body.username)) {
+            let val = await login.findOneAndDelete({username: req.body.username});
+            res.status(200).send({message: "Removed User", user: val});
         }
-        await login.findOneAndDelete({username: req.body.username});
+        else {
+            res.status(400).send({error: "something went wrong, no username found"});
+        }
     } catch (error) {
         res.status(400).send({error: error});
         return;
     }
-    res.status(200).send({message: "Removed Use"});
 })
 
 //-------------------------------------------------- Group Functionality -------------------------------------------------//
@@ -138,10 +139,9 @@ app.delete("/removeUser", async (req, res) => {
 app.post("/createGroup", async (req, res) => {
     //Error handling
     try {
-        let val = await validate(req, 1, login);
-        if (val != "") {
-            res.status(400).send({error: val});
-            return
+        if(await loginCheck(req.body.username)) {
+            let val = await login.findOneAndDelete({username: req.body.username});
+            res.status(200).send({message: "Removed User", user: val});
         }
         let user = await login.findOne({username: req.body.username});
         res.status(200).send({message: "Confirmed Login", userdata: user});
