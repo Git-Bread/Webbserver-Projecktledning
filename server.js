@@ -170,18 +170,21 @@ app.post("/groupMessage", async (req, res) => {
             res.status(401).send({error: "invalid user"});
             return;
         }
-        let user = await login.findOne({username: req.body.username});
-        let group = await group.find({member: user, name: req.body.name});
-        if(!group) {
+        console.log(req.body.groupname);
+        let messageGroup = await group.findOne({name: req.body.groupname, members: [req.body.username]});
+        if(!messageGroup) {
             res.status(401).send({error: "you are not a member of the group or it dosent exist"});
+            return;
         };
         let message = {
             message: req.body.message, 
             time: new Date, 
-            user: req.body.user
+            user: req.body.username
         }
-        group.messages.push(message);
-        res.status(200).send({error: "sent message"});
+        console.log(message);
+        messageGroup.messages.push(message);
+        messageGroup.save();
+        res.status(200).send({message: "sent message in group"});
     }
     catch (error) {
         res.status(400).send({error: error});
