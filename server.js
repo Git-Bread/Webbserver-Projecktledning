@@ -117,7 +117,6 @@ app.put("/uploadPicture", async (req, res) => {
     res.status(200).send({message: "Updated User Picture"});
 })
 
-
 //Remove user, wont be used on the website but exists for admin purposes
 app.delete("/removeUser", async (req, res) => {
     try {
