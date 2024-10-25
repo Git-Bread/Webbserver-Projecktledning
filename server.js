@@ -4,7 +4,7 @@ import validate from "./validator.js";
 //express imports to facilitate the webbapp
 import express, { json } from "express";
 const app = express();
-app.use(json());
+app.use(express.json({limit: '16mb'}));
 
 //mongo db and dotenv stuff
 import dotenv from "dotenv";
@@ -115,7 +115,7 @@ app.put("/uploadPicture", async (req, res) => {
             res.status(404).send({error: "Something went wrong, no username found"});
         }
     } catch (error) {
-        res.status(400).send({error: error});
+        res.status(400).send({error: "something broke please try again"});
         return;
     }
     res.status(200).send({message: "Updated User Picture"});
