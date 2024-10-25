@@ -104,11 +104,15 @@ app.post("/login", async (req, res) => {
 //change profile picture
 app.put("/uploadPicture", async (req, res) => {
     try {
+        if(!req.body.img) {
+            res.status(404).send({error: "No image uploaded"});
+            return;
+        }
         if(await loginCheck(req.body.username)) {
             await login.findOneAndUpdate({username: req.body.username}, {img: req.body.img});
         }
         else {
-            res.status(404).send({error: "something went wrong, no username found"});
+            res.status(404).send({error: "Something went wrong, no username found"});
         }
     } catch (error) {
         res.status(400).send({error: error});
