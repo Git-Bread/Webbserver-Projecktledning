@@ -33,6 +33,9 @@ export default async function registrationValidate(obj, login) {
 
     //sends all the errors back
     if (errors[0] != "") {
+        if (errors.length > 1) {
+            errors = errors.join(". ");
+        }
         return errors;   
     }
     return false
