@@ -288,7 +288,7 @@ app.put("/groupUploadFile", async (req, res) => {
     res.status(200).send({message: "Uploaded file"});
 })
 
-app.get("/groupFetch", async (req, res) => {
+app.post("/groupFetch", async (req, res) => {
     if(!await loginCheck(req.body.username)) {
         res.status(401).send({error: "invalid user"});
         return;
