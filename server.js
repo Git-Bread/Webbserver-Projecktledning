@@ -47,7 +47,6 @@ const groupSchema = new Schema({
     messages: [{message: String, time: Date, user: String}],
     files: [{name: String, file: Buffer, time: Date, user: String}]
 });
-
 const group = model("groups", groupSchema);
 
 //-------------------------------------------------- Profile Functionality -------------------------------------------------//
@@ -75,6 +74,7 @@ app.post("/register", async (req, res) => {
     res.status(200).send({message: "Account registered"});
 })
 
+//quick login check, very rudimentary
 async function loginCheck(username) {
     if(await login.findOne({username: username})) {
         return true;
@@ -104,10 +104,12 @@ app.post("/login", async (req, res) => {
 //change profile picture
 app.put("/uploadPicture", async (req, res) => {
     try {
+        //error handling
         if(!req.body.img) {
             res.status(404).send({error: "No image uploaded"});
             return;
         }
+        //checks if valid login and updates value if login is valid
         if(await loginCheck(req.body.username)) {
             await login.findOneAndUpdate({username: req.body.username}, {img: req.body.img});
         }
@@ -124,6 +126,7 @@ app.put("/uploadPicture", async (req, res) => {
 //Remove user, wont be used on the website but exists for admin purposes
 app.delete("/removeUser", async (req, res) => {
     try {
+        //making sure its a valid removal
         if(await loginCheck(req.body.username)) {
             let val = await login.findOneAndDelete({username: req.body.username});
             res.status(200).send({message: "Removed User", user: val});
@@ -138,13 +141,15 @@ app.delete("/removeUser", async (req, res) => {
 })
 
 //-------------------------------------------------- Group Functionality -------------------------------------------------//
-
+//creating group
 app.post("/groupCreate", async (req, res) => {
     try {
+        //error handling
         if(!await loginCheck(req.body.username)) { 
             res.status(400).send({message: "Invalid User"});
             return;
         }
+        //making sure user is valid, and group isent in use already
         let user = await login.findOne({username: req.body.username});
         if(await group.findOne({name: req.body.groupname})) {
             res.status(400).send({error: "group name already in use"});
@@ -154,6 +159,7 @@ app.post("/groupCreate", async (req, res) => {
             name: req.body.groupname,
             members: user.username
         });
+        //adding the group to the member and the member to the group
         user.member.push(newGroup.name);
         user.save();
         newGroup.save();
@@ -165,8 +171,10 @@ app.post("/groupCreate", async (req, res) => {
     }
 })
 
+//group removal
 app.delete("/groupDelete", async (req, res) => {
     try {
+        //error handling
         if(!await loginCheck(req.body.username)) {
             res.status(401).send({error: "invalid user"});
             return;
@@ -177,8 +185,12 @@ app.delete("/groupDelete", async (req, res) => {
         }
         let deleteGroup = await group.findOne({name: req.body.groupname, members: req.body.username});
         let user = await login.findOne({username: req.body.username});
+
+        //removes the group from the user
         user.member.pull(deleteGroup.name);
         user.save();
+
+        //checks if its the last member, otherwise it wont delete the group, it will just remove the user
         if(deleteGroup.members.length > 1) {
             deleteGroup.members.pull(user.username);
             deleteGroup.save();
@@ -193,8 +205,10 @@ app.delete("/groupDelete", async (req, res) => {
     }
 })
 
+//join group
 app.put("/groupJoin", async (req, res) => {
     try {
+        //error handling
         if(!await loginCheck(req.body.username)) {
             res.status(401).send({error: "invalid user"});
             return;
@@ -211,6 +225,7 @@ app.put("/groupJoin", async (req, res) => {
         let user = await login.findOne({username: req.body.username})
         let groupJoin = await group.findOne({name: req.body.groupname});
 
+        //adds group to member and member to group
         user.member.push(groupJoin.name);
         user.save();
         groupJoin.members.push(user.username);
@@ -224,8 +239,10 @@ app.put("/groupJoin", async (req, res) => {
     }
 })
 
+//upload a message to the group
 app.post("/groupMessage", async (req, res) => {
     try {
+        //error handling
         if(!await loginCheck(req.body.username)) {
             res.status(401).send({error: "invalid user"});
             return;
@@ -240,6 +257,7 @@ app.post("/groupMessage", async (req, res) => {
             res.status(401).send({error: "you are not a member of the group or it dosent exist"});
             return;
         };
+        //message object
         let message = {
             message: req.body.message, 
             time: new Date, 
@@ -256,8 +274,10 @@ app.post("/groupMessage", async (req, res) => {
     }
 })
 
+//upload a file to the group
 app.put("/groupUploadFile", async (req, res) => {
     try {
+        //error handling
         if(!await loginCheck(req.body.username)) {
             res.status(401).send({error: "invalid user"});
             return;
@@ -271,12 +291,13 @@ app.put("/groupUploadFile", async (req, res) => {
             return;
         }
         
-
         let groupFile = await group.findOne({name: req.body.groupname, members: req.body.username});
         if(!groupFile) {
             res.status(401).send({error: "you are not a member of the group or it dosent exist"});
             return;
         };
+
+        //file object, file data stored in BSON
         let newFile = {
             name: req.body.fileName,
             file: req.body.file, 
@@ -294,7 +315,10 @@ app.put("/groupUploadFile", async (req, res) => {
     res.status(200).send({message: "Uploaded file"});
 })
 
+//fetches a group with all its content, post since it handles data which requires a message body, might be better to migrate to get and put the verification
+//data in header instead, that may however also be a bad idea due to potentiall sensitive data in the header. 
 app.post("/groupFetch", async (req, res) => {
+    //error handling
     if(!await loginCheck(req.body.username)) {
         res.status(401).send({error: "invalid user"});
         return;
