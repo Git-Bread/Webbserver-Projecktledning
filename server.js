@@ -45,7 +45,7 @@ const groupSchema = new Schema({
     name: String,
     members: [String],
     messages: [{message: String, time: Date, user: String}],
-    files: [{file: Buffer, time: Date, user: String}]
+    files: [{name: String, file: Buffer, time: Date, user: String}]
 });
 
 const group = model("groups", groupSchema);
@@ -266,6 +266,11 @@ app.put("/groupUploadFile", async (req, res) => {
             res.status(400).send({error: "invalid group"});
             return;
         }
+        if (!req.body.fileName) {
+            res.status(400).send({error: "no filename"});
+            return;
+        }
+        
 
         let groupFile = await group.findOne({name: req.body.groupname, members: req.body.username});
         if(!groupFile) {
@@ -273,6 +278,7 @@ app.put("/groupUploadFile", async (req, res) => {
             return;
         };
         let file = {
+            name: req.body.fileName,
             file: req.body.file, 
             time: new Date, 
             user: req.body.username
