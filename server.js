@@ -231,7 +231,7 @@ app.post("/groupMessage", async (req, res) => {
             return;
         }
         if(!await group.findOne({name: req.body.groupname})) {
-            res.status(400).send({error: "invalid group"});
+            res.status(400).send({error: "invalid group, please select one if you havent"});
             return;
         }
 
@@ -277,18 +277,18 @@ app.put("/groupUploadFile", async (req, res) => {
             res.status(401).send({error: "you are not a member of the group or it dosent exist"});
             return;
         };
-        let file = {
+        let newFile = {
             name: req.body.fileName,
             file: req.body.file, 
             time: new Date, 
             user: req.body.username
         }
 
-        groupFile.file.push(file);
+        groupFile.files.push(newFile);
         groupFile.save();
 
     } catch (error) {
-        res.status(400).send({error: error});
+        res.status(400).send({error: "something broke, try another file"});
         return;
     }
     res.status(200).send({message: "Uploaded file"});
